@@ -1,0 +1,11 @@
+[package]
+name = "simrs"
+version = "0.1.0" # remember to update html_root_url
+authors = ["Michal Siedlaczek <siedlaczek@pm.me>"]
+edition = "2018"
+description = "General purpose descrete event simulation library."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/elshize/simrs"
+readme = "README.md"
+keywords = ["simulation", "descrete", "event"]
+categories = ["simulation"]
