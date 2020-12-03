@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use crate::{generate_next_id, ComponentId, EventEntry, Scheduler, State};
@@ -42,14 +43,14 @@ where
 
 /// Container holding type-erased components.
 pub struct Components {
-    components: Vec<Box<dyn ::std::any::Any>>,
+    components: HashMap<usize, Box<dyn ::std::any::Any>>,
 }
 
 impl Default for Components {
     #[must_use]
     fn default() -> Self {
         Self {
-            components: Vec::new(),
+            components: HashMap::new(),
         }
     }
 }
@@ -62,7 +63,9 @@ impl Components {
         scheduler: &mut Scheduler,
         state: &mut State,
     ) {
-        self.components[entry.component_idx()]
+        self.components
+            .get(&entry.component_idx())
+            .unwrap()
             .downcast_ref::<Box<dyn ProcessEventEntry>>()
             .expect("Failed to downcast component.")
             .process_event_entry(entry, scheduler, state);
@@ -76,7 +79,7 @@ impl Components {
     ) -> ComponentId<E> {
         let id = generate_next_id();
         let component: Box<dyn ProcessEventEntry> = Box::new(component);
-        self.components.push(Box::new(component));
+        self.components.insert(id, Box::new(component));
         ComponentId::new(id)
     }
 }
