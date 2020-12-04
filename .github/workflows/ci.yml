@@ -86,6 +86,7 @@ jobs:
             - run: sudo apt-get install -y libtinfo-dev libtinfo5 build-essential
             - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
             - run: sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+            - run: sudo apt-get update
             - run: sudo apt-get install -y llvm-11
             - run: cargo install rustfilt
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
