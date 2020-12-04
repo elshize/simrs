@@ -85,4 +85,5 @@ jobs:
                   cached: ${{ steps.cache-llvm.outputs.cache-hit }}
             - run: sudo apt-get install -y jq
             - run: cargo install rustfilt
+            - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
             - run: ./codecov.sh --check
