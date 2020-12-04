@@ -7,7 +7,11 @@
     unused_qualifications
 )]
 #![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::module_name_repetitions, clippy::default_trait_access)]
+#![allow(
+    clippy::module_name_repetitions,
+    clippy::default_trait_access,
+    clippy::clippy::result_unit_err
+)]
 
 //! General purpose simulation library that provides the mechanisms such as: scheduler, state,
 //! queues, etc.
@@ -348,7 +352,7 @@ impl Simulation {
 
     /// Runs the entire simulation from start to end.
     /// This function might not terminate if the end condition is not satisfied.
-    pub fn run<F: Fn(&Simulation) -> ()>(&mut self, step_function: F) {
+    pub fn run<F: Fn(&Simulation)>(&mut self, step_function: F) {
         while self.step() {
             step_function(self)
         }
