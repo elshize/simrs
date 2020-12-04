@@ -348,7 +348,7 @@ impl Simulation {
 
     /// Runs the entire simulation from start to end.
     /// This function might not terminate if the end condition is not satisfied.
-    pub fn run<F: Fn(&Simulation) -> ()>(&mut self, step_function: F) {
+    pub fn run<F: Fn(&Simulation)>(&mut self, step_function: F) {
         while self.step() {
             step_function(self)
         }

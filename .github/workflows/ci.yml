@@ -1,0 +1,90 @@
+name: CI
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+
+env:
+  RUST_LOG: info
+  RUST_BACKTRACE: 1
+
+jobs:
+    test-versions:
+        name: Test Rust ${{ matrix.rust }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+              rust: [stable, beta, nightly]
+        steps:
+            - uses: actions/checkout@v2
+            - uses: hecrj/setup-rust-action@v1
+              with:
+                  rust-version: ${{ matrix.rust }}
+            - run: cargo test --verbose --workspace
+    cargo-check:
+        name: Check for warnings
+        runs-on: ubuntu-latest
+        env:
+            RUSTFLAGS: -Dwarnings
+        steps:
+            - uses: actions/checkout@v2
+            - uses: hecrj/setup-rust-action@v1
+            - run: cargo check --workspace --all-targets --verbose
+    clippy:
+        name: Lint with Clippy
+        runs-on: ubuntu-latest
+        env:
+            RUSTFLAGS: -Dwarnings
+        steps:
+            - uses: actions/checkout@v2
+            - uses: hecrj/setup-rust-action@v1
+              with:
+                components: clippy
+            - run: cargo clippy --workspace --all-targets --verbose
+    rustfmt:
+        name: Verify code formatting
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v2
+          - uses: hecrj/setup-rust-action@v1
+            with:
+              components: rustfmt
+          - run: cargo fmt --all -- --check
+    check-rustdoc-links:
+        name: Check intra-doc links
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: hecrj/setup-rust-action@v1
+              with:
+                  rust-version: nightly
+            - run: cargo rustdoc -- -D warnings
+    # code-coverage:
+    #     name: Run code coverage
+    #     runs-on: ubuntu-latest
+    #     env:
+    #         RUSTFLAGS: -Zinstrument-coverage
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - uses: hecrj/setup-rust-action@v1
+    #           with:
+    #               rust-version: nightly
+    #         - name: Cache LLVM and Clang
+    #           id: cache-llvm
+    #           uses: actions/cache@v2
+    #           with:
+    #               path: ${{ runner.temp }}/llvm
+    #               key: llvm-10.0
+    #         - name: Install LLVM and Clang
+    #           uses: KyleMayes/install-llvm-action@v1
+    #           with:
+    #               version: "10.0"
+    #               directory: ${{ runner.temp }}/llvm
+    #               cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+    #         - run: sudo apt-get install -y libtinfo-dev libtinfo5 build-essential
+    #         - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+    #         - run: cargo install rustfilt
+    #         - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
+    #         - run: ./codecov.sh --check
