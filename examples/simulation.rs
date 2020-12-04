@@ -77,7 +77,9 @@ impl Component for Consumer {
             ConsumerEvent::Received => {
                 if busy {
                     if let Some(product) = state.recv(self.incoming) {
-                        state.get_mut(self.working_on).map(|w| *w = Some(product));
+                        if let Some(w) = state.get_mut(self.working_on) {
+                            *w = Some(product);
+                        }
                         scheduler.schedule(self.interval(), self_id, ConsumerEvent::Finished);
                     }
                 }
