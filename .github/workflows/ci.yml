@@ -71,19 +71,6 @@ jobs:
             - uses: hecrj/setup-rust-action@v1
               with:
                   rust-version: nightly
-            - name: Cache LLVM and Clang
-              id: cache-llvm
-              uses: actions/cache@v2
-              with:
-                  path: ${{ runner.temp }}/llvm
-                  key: llvm-12.0
-            - name: Install LLVM and Clang
-              uses: KyleMayes/install-llvm-action@v1
-              with:
-                  version: "12.0"
-                  directory: ${{ runner.temp }}/llvm
-                  cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-            - run: sudo apt-get install -y libtinfo-dev libtinfo5 build-essential
             - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
             - run: cargo install rustfilt
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
