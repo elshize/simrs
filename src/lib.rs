@@ -7,11 +7,7 @@
     unused_qualifications
 )]
 #![warn(clippy::all, clippy::pedantic)]
-#![allow(
-    clippy::module_name_repetitions,
-    clippy::default_trait_access,
-    clippy::clippy::result_unit_err
-)]
+#![allow(clippy::module_name_repetitions, clippy::default_trait_access)]
 
 //! General purpose simulation library that provides the mechanisms such as: scheduler, state,
 //! queues, etc.
