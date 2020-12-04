@@ -71,23 +71,21 @@ jobs:
             - uses: hecrj/setup-rust-action@v1
               with:
                   rust-version: nightly
-            # - name: Cache LLVM and Clang
-            #   id: cache-llvm
-            #   uses: actions/cache@v2
-            #   with:
-            #       path: ${{ runner.temp }}/llvm
-            #       key: llvm-11.0
-            # - name: Install LLVM and Clang
-            #   uses: KyleMayes/install-llvm-action@v1
-            #   with:
-            #       version: "11.0"
-            #       directory: ${{ runner.temp }}/llvm
-            #       cached: ${{ steps.cache-llvm.outputs.cache-hit }}
+            - name: Cache LLVM and Clang
+              id: cache-llvm
+              uses: actions/cache@v2
+              with:
+                  path: ${{ runner.temp }}/llvm
+                  key: llvm-11.0
+            - name: Install LLVM and Clang
+              uses: KyleMayes/install-llvm-action@v1
+              with:
+                  version: "11.0"
+                  directory: ${{ runner.temp }}/llvm
+                  cached: ${{ steps.cache-llvm.outputs.cache-hit }}
             - run: sudo apt-get install -y libtinfo-dev libtinfo5 build-essential
             - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-            - run: sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
-            - run: sudo apt-get update
-            - run: sudo apt-get install -y libllvm-11-ocaml-dev libllvm11 llvm-11 llvm-11-dev llvm-11-doc llvm-11-examples llvm-11-runtime
+            - run: ln -s `readlink -f ./lib/libtinfo.so` `readlink -f ./lib/libtinfo.so | sed 's@libtinfo.so$@libtinfo.so.6@'`
             - run: cargo install rustfilt
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
             - run: ./codecov.sh --check
