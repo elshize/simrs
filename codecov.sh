@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set +xe
+
 REQUIRED=100
 
 cargo clean
