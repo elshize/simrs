@@ -83,6 +83,6 @@ jobs:
                   version: "10.0"
                   directory: ${{ runner.temp }}/llvm
                   cached: ${{ steps.cache-llvm.outputs.cache-hit }}
-            - name: Install jq
-              run: sudo apt-get install -y jq
+            - run: sudo apt-get install -y jq
+            - run: cargo install rustfilt
             - run: ./codecov.sh --check
