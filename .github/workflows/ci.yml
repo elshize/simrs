@@ -74,7 +74,7 @@ jobs:
               with:
                   rust-version: nightly
             - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-            - run: add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
+            - run: sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
             - run: sudo apt-get install -y llvm-11
             - run: cargo install rustfilt
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
