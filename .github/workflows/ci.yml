@@ -66,13 +66,15 @@ jobs:
         runs-on: ubuntu-latest
         env:
             RUSTFLAGS: -Zinstrument-coverage
+            LLVM_PROFDATA: llvm-profdata-11
+            LLVM_COV: llvm-cov-11
         steps:
             - uses: actions/checkout@v2
             - uses: hecrj/setup-rust-action@v1
               with:
                   rust-version: nightly
-            - run: sudo apt-get install -y llvm-3.9 llvm-toolchain-3.9
             - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+            - run: sudo apt-get install -y llvm-11
             - run: cargo install rustfilt
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
             - run: ./codecov.sh --check

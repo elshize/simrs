@@ -4,6 +4,9 @@ set +xe
 
 REQUIRED=100
 
+LLVM_COV=${LLVM_COV:-llvm-cov}
+LLVM_PROFDATA=${LLVM_PROFDATA:-llvm-profdata}
+
 cargo clean
 RUSTFLAGS="-Zinstrument-coverage" cargo test --lib --no-run
 tests="target/debug/deps/$(ls target/debug/deps | grep -e "^simrs-[a-z0-9]*$")"
@@ -19,14 +22,14 @@ for example in $examples; do
     cat default.profraw >> all.profraw
 done
 
-llvm-profdata merge -sparse all.profraw -o default.profdata
+$LLVM_PROFDATA merge -sparse all.profraw -o default.profdata
 if ! [[ $1 = "--check" ]]; then
-    llvm-cov report -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata
-    llvm-cov show -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
+    $LLVM_COV report -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata
+    $LLVM_COV show -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
         -show-line-counts-or-regions \
         -format=html > cov.html
 else
-    llvm-cov export -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
+    $LLVM_COV export -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
         > lcov.json
     percent=$(jq '.data[].totals.lines.percent' lcov.json)
     if (( percent < $REQUIRED )); then
