@@ -96,6 +96,12 @@ pub struct ClockRef {
     clock: Clock,
 }
 
+impl From<Clock> for ClockRef {
+    fn from(clock: Clock) -> Self {
+        Self { clock }
+    }
+}
+
 impl ClockRef {
     /// Return the current simulation time.
     #[must_use]
