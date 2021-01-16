@@ -1,4 +1,4 @@
-use simrs::{Component, ComponentId, Key, QueueId, Scheduler, Simulation, State};
+use simrs::{Component, ComponentId, Fifo, Key, QueueId, Scheduler, Simulation, State};
 use std::time::Duration;
 
 #[derive(Debug)]
@@ -97,7 +97,7 @@ impl Component for Consumer {
 
 fn main() {
     let mut simulation = Simulation::default();
-    let queue = simulation.add_queue::<Product>();
+    let queue = simulation.add_queue(Fifo::default());
     let working_on = simulation.state.insert::<Option<Product>>(None);
     let consumer = simulation.add_component(Consumer {
         incoming: queue,

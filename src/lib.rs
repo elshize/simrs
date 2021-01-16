@@ -56,9 +56,9 @@
 //! used for clarity.
 //!
 //! ```
-//! # use simrs::State;
+//! # use simrs::{State, Fifo, Queue};
 //! let mut state = State::default();
-//! let queue_id = state.new_queue();
+//! let queue_id = state.add_queue(Fifo::default());
 //! state.send(queue_id, 1);
 //! assert_eq!(state.len(queue_id), 1);
 //! assert_eq!(state.recv(queue_id), Some(1));
@@ -69,10 +69,10 @@
 //! the capacity.
 //!
 //! ```
-//! # use simrs::State;
+//! # use simrs::{State, Fifo, Queue};
 //! let mut state = State::default();
 //! let queue_capacity = 1;
-//! let queue_id = state.new_bounded_queue(queue_capacity);
+//! let queue_id = state.add_queue(Fifo::bounded(queue_capacity));
 //! assert!(state.send(queue_id, 1).is_ok());
 //! assert_eq!(state.len(queue_id), 1);
 //! assert!(!state.send(queue_id, 2).is_ok());
@@ -180,7 +180,7 @@
 //! # Example
 //!
 //! ```
-//! # use simrs::{Simulation, State, Scheduler, Components, ComponentId, Component, QueueId, Key};
+//! # use simrs::{Simulation, State, Scheduler, Components, ComponentId, Component, QueueId, Key, Fifo};
 //! # use std::time::Duration;
 //!
 //! #[derive(Debug)]
@@ -277,7 +277,7 @@
 //!
 //! fn main() {
 //!     let mut simulation = Simulation::default();
-//!     let queue = simulation.add_queue::<Product>();
+//!     let queue = simulation.add_queue(Fifo::default());
 //!     let working_on = simulation.state.insert::<Option<Product>>(None);
 //!     let consumer = simulation.add_component(Consumer {
 //!         incoming: queue,
@@ -309,7 +309,7 @@ pub use component::{Component, Components};
 pub use scheduler::{ClockRef, EventEntry, Scheduler};
 pub use state::State;
 
-use queue::Queue;
+pub use queue::{Fifo, PriorityQueue, PushError, Queue};
 
 mod component;
 mod queue;
@@ -365,14 +365,8 @@ impl Simulation {
 
     /// Adds a new unbounded queue.
     #[must_use]
-    pub fn add_queue<V: 'static>(&mut self) -> QueueId<V> {
-        self.state.new_queue()
-    }
-
-    /// Adds a new bounded queue.
-    #[must_use]
-    pub fn add_bounded_queue<V: 'static>(&mut self, capacity: usize) -> QueueId<V> {
-        self.state.new_bounded_queue(capacity)
+    pub fn add_queue<Q: Queue<V> + 'static, V: 'static>(&mut self, queue: Q) -> QueueId<V> {
+        self.state.add_queue(queue)
     }
 
     /// Schedules a new event to be executed at time `time` in component `component`.

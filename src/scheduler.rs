@@ -140,11 +140,7 @@ impl Scheduler {
     }
 
     /// Schedules `event` to be executed for `component` at `self.time()`.
-    pub fn schedule_immediately<E: fmt::Debug + 'static>(
-        &mut self,
-        component: ComponentId<E>,
-        event: E,
-    ) {
+    pub fn schedule_now<E: fmt::Debug + 'static>(&mut self, component: ComponentId<E>, event: E) {
         self.schedule(Duration::default(), component, event);
     }
 
@@ -174,6 +170,24 @@ impl Scheduler {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_event_entry_debug() {
+        let entry = EventEntry {
+            time: Reverse(Duration::from_secs(1)),
+            component: 2,
+            inner: Box::new(String::from("inner")),
+        };
+        assert_eq!(
+            &format!("{:?}", entry),
+            "EventEntry { time: Reverse(1s), component: 2, inner: Any }"
+        );
+        let typed = entry.downcast::<String>().unwrap();
+        assert_eq!(
+            &format!("{:?}", typed),
+            "EventEntryTyped { time: 1s, component_id: ComponentId { id: 2, _marker: PhantomData }, component_idx: 2, event: \"inner\" }"
+        );
+    }
 
     #[test]
     fn test_event_entry_downcast() {
@@ -236,13 +250,14 @@ mod test {
     fn test_scheduler() {
         let mut scheduler = Scheduler::default();
         assert_eq!(scheduler.time(), Duration::new(0, 0));
+        assert_eq!(scheduler.clock().time(), Duration::new(0, 0));
         assert!(scheduler.events.is_empty());
 
         let component_a = ComponentId::<EventA>::new(0);
         let component_b = ComponentId::<EventB>::new(1);
 
         scheduler.schedule(Duration::from_secs(1), component_a, EventA);
-        scheduler.schedule(Duration::from_secs(0), component_b, EventB);
+        scheduler.schedule_now(component_b, EventB);
         scheduler.schedule(Duration::from_secs(2), component_b, EventB);
 
         assert_eq!(scheduler.time(), Duration::from_secs(0));
@@ -264,6 +279,7 @@ mod test {
         assert_eq!(entry.event, &EventA);
 
         assert_eq!(scheduler.time(), Duration::from_secs(1));
+        assert_eq!(scheduler.clock().time(), Duration::from_secs(1));
 
         let entry = scheduler.pop().unwrap();
         let entry = entry.downcast::<EventB>().unwrap();

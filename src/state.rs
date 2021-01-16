@@ -1,7 +1,10 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use crate::{Key, Queue, QueueId};
+use super::{
+    queue::{Fifo, PushError},
+    Key, Queue, QueueId,
+};
 
 /// State of a simulation holding all queues and arbitrary values in a store value.
 pub struct State {
@@ -55,19 +58,10 @@ impl State {
     }
 
     /// Creates a new unbounded queue, returning its ID.
-    pub fn new_queue<V: 'static>(&mut self) -> QueueId<V> {
+    pub fn add_queue<Q: Queue<V> + 'static, V: 'static>(&mut self, queue: Q) -> QueueId<V> {
         let id = self.next_id;
         self.next_id += 1;
-        self.queues.insert(id, Box::new(Queue::<V>::default()));
-        QueueId::new(id)
-    }
-
-    /// Creates a new bounded queue, returning its ID.
-    pub fn new_bounded_queue<V: 'static>(&mut self, capacity: usize) -> QueueId<V> {
-        let id = self.next_id;
-        self.next_id += 1;
-        self.queues
-            .insert(id, Box::new(Queue::<V>::bounded(capacity)));
+        self.queues.insert(id, Box::new(queue));
         QueueId::new(id)
     }
 
@@ -75,13 +69,13 @@ impl State {
     ///
     /// # Errors
     /// It returns an error if the queue is full.
-    pub fn send<V: 'static>(&mut self, queue: QueueId<V>, value: V) -> Result<(), ()> {
+    pub fn send<V: 'static>(&mut self, queue: QueueId<V>, value: V) -> Result<(), PushError> {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Queue<V>>()
+            .downcast_mut::<Fifo<V>>()
             .expect("Ensured by the key type.")
-            .push_back(value)
+            .push(value)
     }
 
     /// Pops the first value from the `queue`. It returns `None` if  the queue is empty.
@@ -89,9 +83,9 @@ impl State {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Queue<V>>()
+            .downcast_mut::<Fifo<V>>()
             .expect("Ensured by the key type.")
-            .pop_front()
+            .pop()
     }
 
     /// Checks the number of elements in the queue.
@@ -99,7 +93,7 @@ impl State {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_ref::<Queue<V>>()
+            .downcast_ref::<Fifo<V>>()
             .expect("Ensured by the key type.")
             .len()
     }
@@ -118,6 +112,7 @@ mod test {
         assert_eq!(state.remove(id), None);
 
         let id = state.insert("string_slice");
+        assert_eq!(state.get(id).copied(), Some("string_slice"));
         assert_eq!(state.remove(id), Some("string_slice"));
         assert_eq!(state.remove(id), None);
 
@@ -127,9 +122,19 @@ mod test {
     }
 
     #[test]
+    fn test_modify_key_values() {
+        let mut state = State::default();
+
+        let id = state.insert(1);
+        *state.get_mut(id).unwrap() = 2;
+        assert_eq!(state.remove(id), Some(2));
+        assert_eq!(state.remove(id), None);
+    }
+
+    #[test]
     fn test_bounded_queue() {
         let mut state = State::default();
-        let qid = state.new_bounded_queue::<&str>(2);
+        let qid = state.add_queue(Fifo::<&str>::bounded(2));
         assert_eq!(state.len(qid), 0);
 
         assert!(state.send(qid, "A").is_ok());
@@ -144,7 +149,7 @@ mod test {
     #[test]
     fn test_unbounded_queue() {
         let mut state = State::default();
-        let qid = state.new_queue::<&str>();
+        let qid = state.add_queue(Fifo::default());
         assert_eq!(state.len(qid), 0);
 
         assert!(state.send(qid, "A").is_ok());
