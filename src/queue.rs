@@ -57,6 +57,7 @@ impl<T> Default for Fifo<T> {
 
 impl<T> Fifo<T> {
     /// Creates a new queue with limited capacity.
+    #[must_use]
     pub fn bounded(capacity: usize) -> Self {
         Self {
             inner: VecDeque::with_capacity(capacity),
@@ -101,6 +102,7 @@ impl<T: Ord> Default for PriorityQueue<T> {
 
 impl<T: Ord> PriorityQueue<T> {
     /// Creates a new queue with limited capacity.
+    #[must_use]
     pub fn bounded(capacity: usize) -> Self {
         Self {
             inner: BinaryHeap::with_capacity(capacity),
