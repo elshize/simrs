@@ -14,10 +14,7 @@ impl std::fmt::Display for PushError {
 impl std::error::Error for PushError {}
 
 /// Trait implemented by the queues used in the simulation.
-pub trait Queue<T>: Default {
-    /// Creates a new queue with limited capacity.
-    fn bounded(capacity: usize) -> Self;
-
+pub trait Queue<T> {
     /// Add an element to the queue.
     ///
     /// # Errors
@@ -58,14 +55,17 @@ impl<T> Default for Fifo<T> {
     }
 }
 
-impl<T> Queue<T> for Fifo<T> {
-    fn bounded(capacity: usize) -> Self {
+impl<T> Fifo<T> {
+    /// Creates a new queue with limited capacity.
+    pub fn bounded(capacity: usize) -> Self {
         Self {
             inner: VecDeque::with_capacity(capacity),
             capacity,
         }
     }
+}
 
+impl<T> Queue<T> for Fifo<T> {
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
             self.inner.push_back(value);
@@ -99,14 +99,17 @@ impl<T: Ord> Default for PriorityQueue<T> {
     }
 }
 
-impl<T: Ord> Queue<T> for PriorityQueue<T> {
-    fn bounded(capacity: usize) -> Self {
+impl<T: Ord> PriorityQueue<T> {
+    /// Creates a new queue with limited capacity.
+    pub fn bounded(capacity: usize) -> Self {
         Self {
             inner: BinaryHeap::with_capacity(capacity),
             capacity,
         }
     }
+}
 
+impl<T: Ord> Queue<T> for PriorityQueue<T> {
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
             self.inner.push(value);
