@@ -14,16 +14,19 @@ impl std::fmt::Display for PushError {
 impl std::error::Error for PushError {}
 
 /// Trait implemented by the queues used in the simulation.
-pub trait Queue<T> {
+pub trait Queue {
+    /// Type of elements held by the queue.
+    type Item;
+
     /// Add an element to the queue.
     ///
     /// # Errors
     ///
     /// Returns an error if the queue is bounded in size and full.
-    fn push(&mut self, value: T) -> Result<(), PushError>;
+    fn push(&mut self, value: Self::Item) -> Result<(), PushError>;
 
     /// Removes the next element and returns it, or `None` if the `Queue` is empty.
-    fn pop(&mut self) -> Option<T>;
+    fn pop(&mut self) -> Option<Self::Item>;
 
     /// Returns the number of elements in the queue.
     fn len(&self) -> usize;
@@ -66,7 +69,9 @@ impl<T> Fifo<T> {
     }
 }
 
-impl<T> Queue<T> for Fifo<T> {
+impl<T> Queue for Fifo<T> {
+    type Item = T;
+
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
             self.inner.push_back(value);
@@ -111,7 +116,9 @@ impl<T: Ord> PriorityQueue<T> {
     }
 }
 
-impl<T: Ord> Queue<T> for PriorityQueue<T> {
+impl<T: Ord> Queue for PriorityQueue<T> {
+    type Item = T;
+
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
             self.inner.push(value);

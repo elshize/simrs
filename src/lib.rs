@@ -187,13 +187,13 @@
 //! struct Product;
 //!
 //! struct Producer {
-//!     outgoing: QueueId<Product>,
+//!     outgoing: QueueId<Fifo<Product>>,
 //!     consumer: ComponentId<ConsumerEvent>,
 //!     produced_count: Key<usize>,
 //! }
 //!
 //! struct Consumer {
-//!     incoming: QueueId<Product>,
+//!     incoming: QueueId<Fifo<Product>>,
 //!     working_on: Key<Option<Product>>,
 //! }
 //!
@@ -365,7 +365,7 @@ impl Simulation {
 
     /// Adds a new unbounded queue.
     #[must_use]
-    pub fn add_queue<Q: Queue<V> + 'static, V: 'static>(&mut self, queue: Q) -> QueueId<V> {
+    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         self.state.add_queue(queue)
     }
 
