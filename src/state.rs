@@ -1,10 +1,7 @@
 use std::any::Any;
 use std::collections::HashMap;
 
-use super::{
-    queue::{Fifo, PushError},
-    Key, Queue, QueueId,
-};
+use super::{queue::PushError, Key, Queue, QueueId};
 
 /// State of a simulation holding all queues and arbitrary values in a store value.
 pub struct State {
@@ -58,7 +55,7 @@ impl State {
     }
 
     /// Creates a new unbounded queue, returning its ID.
-    pub fn add_queue<Q: Queue<V> + 'static, V: 'static>(&mut self, queue: Q) -> QueueId<V> {
+    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         let id = self.next_id;
         self.next_id += 1;
         self.queues.insert(id, Box::new(queue));
@@ -69,31 +66,35 @@ impl State {
     ///
     /// # Errors
     /// It returns an error if the queue is full.
-    pub fn send<V: 'static>(&mut self, queue: QueueId<V>, value: V) -> Result<(), PushError> {
+    pub fn send<Q: Queue + 'static>(
+        &mut self,
+        queue: QueueId<Q>,
+        value: Q::Item,
+    ) -> Result<(), PushError> {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Fifo<V>>()
+            .downcast_mut::<Q>()
             .expect("Ensured by the key type.")
             .push(value)
     }
 
     /// Pops the first value from the `queue`. It returns `None` if  the queue is empty.
-    pub fn recv<V: 'static>(&mut self, queue: QueueId<V>) -> Option<V> {
+    pub fn recv<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Fifo<V>>()
+            .downcast_mut::<Q>()
             .expect("Ensured by the key type.")
             .pop()
     }
 
     /// Checks the number of elements in the queue.
-    pub fn len<V: 'static>(&mut self, queue: QueueId<V>) -> usize {
+    pub fn len<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> usize {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
-            .downcast_ref::<Fifo<V>>()
+            .downcast_ref::<Q>()
             .expect("Ensured by the key type.")
             .len()
     }
@@ -102,6 +103,7 @@ impl State {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::{Fifo, PriorityQueue};
 
     #[test]
     fn test_add_remove_key_values() {
@@ -159,6 +161,37 @@ mod test {
         assert_eq!(state.recv(qid), Some("A"));
         assert_eq!(state.recv(qid), Some("B"));
         assert_eq!(state.recv(qid), Some("C"));
+        assert_eq!(state.recv(qid), None);
+    }
+
+    #[test]
+    fn test_bounded_queue_priority() {
+        let mut state = State::default();
+        let qid = state.add_queue(PriorityQueue::bounded(2));
+        assert_eq!(state.len(qid), 0);
+
+        assert!(state.send(qid, 2).is_ok());
+        assert!(state.send(qid, 1).is_ok());
+        assert!(state.send(qid, 3).is_err());
+
+        assert_eq!(state.recv(qid), Some(2));
+        assert_eq!(state.recv(qid), Some(1));
+        assert_eq!(state.recv(qid), None);
+    }
+
+    #[test]
+    fn test_unbounded_queue_priority() {
+        let mut state = State::default();
+        let qid = state.add_queue(PriorityQueue::default());
+        assert_eq!(state.len(qid), 0);
+
+        assert!(state.send(qid, 2).is_ok());
+        assert!(state.send(qid, 1).is_ok());
+        assert!(state.send(qid, 3).is_ok());
+
+        assert_eq!(state.recv(qid), Some(3));
+        assert_eq!(state.recv(qid), Some(2));
+        assert_eq!(state.recv(qid), Some(1));
         assert_eq!(state.recv(qid), None);
     }
 }

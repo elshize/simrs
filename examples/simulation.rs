@@ -5,13 +5,13 @@ use std::time::Duration;
 struct Product;
 
 struct Producer {
-    outgoing: QueueId<Product>,
+    outgoing: QueueId<Fifo<Product>>,
     consumer: ComponentId<ConsumerEvent>,
     produced_count: Key<usize>,
 }
 
 struct Consumer {
-    incoming: QueueId<Product>,
+    incoming: QueueId<Fifo<Product>>,
     working_on: Key<Option<Product>>,
 }
 
