@@ -62,7 +62,7 @@ impl State {
         QueueId::new(id)
     }
 
-    /// Sends `value` to the `queue`.
+    /// Sends `value` to the `queue`. This is a shorthand for `queue_mut(queue).push(value)`.
     ///
     /// # Errors
     /// It returns an error if the queue is full.
@@ -71,33 +71,40 @@ impl State {
         queue: QueueId<Q>,
         value: Q::Item,
     ) -> Result<(), PushError> {
-        self.queues
-            .get_mut(&queue.id)
-            .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Q>()
-            .expect("Ensured by the key type.")
-            .push(value)
+        self.queue_mut(queue).push(value)
     }
 
     /// Pops the first value from the `queue`. It returns `None` if  the queue is empty.
+    /// This is a shorthand for `queue_mut(queue).pop(value)`.
     pub fn recv<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
-        self.queues
-            .get_mut(&queue.id)
-            .expect("Queues cannot be removed so it must exist.")
-            .downcast_mut::<Q>()
-            .expect("Ensured by the key type.")
-            .pop()
+        self.queue_mut(queue).pop()
     }
 
     /// Checks the number of elements in the queue.
+    /// This is a shorthand for `queue(queue).len()`.
     #[must_use]
     pub fn len<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> usize {
+        self.queue(queue).len()
+    }
+
+    /// Returns a immutable reference to the queue by the given ID.
+    #[must_use]
+    pub fn queue<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> &Q {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
             .downcast_ref::<Q>()
             .expect("Ensured by the key type.")
-            .len()
+    }
+
+    /// Returns a mutable reference to the queue by the given ID.
+    #[must_use]
+    pub fn queue_mut<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> &mut Q {
+        self.queues
+            .get_mut(&queue.id)
+            .expect("Queues cannot be removed so it must exist.")
+            .downcast_mut::<Q>()
+            .expect("Ensured by the key type.")
     }
 }
 
@@ -156,7 +163,7 @@ mod test {
         assert_eq!(state.len(qid), 0);
 
         assert!(state.send(qid, "A").is_ok());
-        assert!(state.send(qid, "B").is_ok());
+        assert!(state.queue_mut(qid).push("B").is_ok());
         assert!(state.send(qid, "C").is_ok());
 
         assert_eq!(state.recv(qid), Some("A"));
@@ -169,7 +176,7 @@ mod test {
     fn test_bounded_queue_priority() {
         let mut state = State::default();
         let qid = state.add_queue(PriorityQueue::bounded(2));
-        assert_eq!(state.len(qid), 0);
+        assert_eq!(state.queue(qid).len(), 0);
 
         assert!(state.send(qid, 2).is_ok());
         assert!(state.send(qid, 1).is_ok());
