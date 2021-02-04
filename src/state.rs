@@ -90,7 +90,8 @@ impl State {
     }
 
     /// Checks the number of elements in the queue.
-    pub fn len<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> usize {
+    #[must_use]
+    pub fn len<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> usize {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
