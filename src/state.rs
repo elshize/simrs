@@ -1,29 +1,26 @@
 use std::any::Any;
 use std::collections::HashMap;
-use std::marker::PhantomData;
 
 use super::{queue::PushError, Key, Queue, QueueId};
 
 /// State of a simulation holding all queues and arbitrary values in a store value.
-pub struct State<'a> {
+pub struct State {
     store: HashMap<usize, Box<dyn Any>>,
     queues: HashMap<usize, Box<dyn Any>>,
     next_id: usize,
-    phantom: PhantomData<&'a ()>,
 }
 
-impl Default for State<'_> {
+impl Default for State {
     fn default() -> Self {
         Self {
             store: HashMap::new(),
             queues: HashMap::new(),
             next_id: 0,
-            phantom: PhantomData,
         }
     }
 }
 
-impl<'a> State<'a> {
+impl State {
     /// Inserts an arbitrary value to the value store. Learn more in the documentation for [`Key`].
     #[must_use = "Discarding key results in leaking inserted value"]
     pub fn insert<V: 'static>(&mut self, value: V) -> Key<V> {
@@ -58,7 +55,7 @@ impl<'a> State<'a> {
     }
 
     /// Creates a new unbounded queue, returning its ID.
-    pub fn add_queue<Q: Queue<'a> + 'static>(&mut self, queue: Q) -> QueueId<Q> {
+    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         let id = self.next_id;
         self.next_id += 1;
         self.queues.insert(id, Box::new(queue));
@@ -69,7 +66,7 @@ impl<'a> State<'a> {
     ///
     /// # Errors
     /// It returns an error if the queue is full.
-    pub fn send<Q: Queue<'a> + 'static>(
+    pub fn send<Q: Queue + 'static>(
         &mut self,
         queue: QueueId<Q>,
         value: Q::Item,
@@ -83,7 +80,7 @@ impl<'a> State<'a> {
     }
 
     /// Pops the first value from the `queue`. It returns `None` if  the queue is empty.
-    pub fn recv<Q: Queue<'a> + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
+    pub fn recv<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
@@ -94,7 +91,7 @@ impl<'a> State<'a> {
 
     /// Checks the number of elements in the queue.
     #[must_use]
-    pub fn queue_len<Q: Queue<'a> + 'static>(&self, queue: QueueId<Q>) -> usize {
+    pub fn queue_len<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> usize {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
@@ -105,7 +102,10 @@ impl<'a> State<'a> {
 
     /// Returns a slice of queue items.
     #[must_use]
-    pub fn queue_items<Q: Queue<'a> + 'static>(&'a self, queue: QueueId<Q>) -> Q::Iterator {
+    pub fn queue_items<'a, Q: Queue + 'static>(
+        &'a self,
+        queue: QueueId<Q>,
+    ) -> Box<dyn Iterator<Item = &'a Q::Item> + 'a> {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")

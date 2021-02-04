@@ -14,12 +14,9 @@ impl std::fmt::Display for PushError {
 impl std::error::Error for PushError {}
 
 /// Trait implemented by the queues used in the simulation.
-pub trait Queue<'q> {
+pub trait Queue {
     /// Type of elements held by the queue.
-    type Item: 'q;
-
-    /// Type of elements held by the queue.
-    type Iterator: Iterator<Item = &'q Self::Item> + 'q;
+    type Item;
 
     /// Add an element to the queue.
     ///
@@ -35,7 +32,10 @@ pub trait Queue<'q> {
     fn len(&self) -> usize;
 
     /// Iterates over queue elements. The iterator items are of type `&T`.
-    fn iter(&'q self) -> Self::Iterator;
+    /// NOTE: This would be better implemented with [GAT], but it is unstable and incomplete.
+    ///
+    /// [GAT]: https://github.com/rust-lang/rfcs/blob/master/text/1598-generic_associated_types.md
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a Self::Item> + 'a>;
 
     /// Returns `true` if there are no elements in the queue.
     fn is_empty(&self) -> bool {
@@ -75,9 +75,9 @@ impl<T> Fifo<T> {
     }
 }
 
-impl<'q, T: 'q> Queue<'q> for Fifo<T> {
+impl<T> Queue for Fifo<T> {
     type Item = T;
-    type Iterator = std::collections::vec_deque::Iter<'q, T>;
+    // type Iterator = std::collections::vec_deque::Iter<'q, T>;
 
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
@@ -96,8 +96,8 @@ impl<'q, T: 'q> Queue<'q> for Fifo<T> {
         self.inner.len()
     }
 
-    fn iter(&'q self) -> Self::Iterator {
-        self.inner.iter()
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a Self::Item> + 'a> {
+        Box::new(self.inner.iter())
     }
 }
 
@@ -127,9 +127,9 @@ impl<T: Ord> PriorityQueue<T> {
     }
 }
 
-impl<'q, T: Ord + 'static> Queue<'q> for PriorityQueue<T> {
+impl<T: Ord + 'static> Queue for PriorityQueue<T> {
     type Item = T;
-    type Iterator = std::collections::binary_heap::Iter<'q, T>;
+    // type Iterator = std::collections::binary_heap::Iter<'q, T>;
 
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
@@ -148,8 +148,8 @@ impl<'q, T: Ord + 'static> Queue<'q> for PriorityQueue<T> {
         self.inner.len()
     }
 
-    fn iter(&'q self) -> Self::Iterator {
-        self.inner.iter()
+    fn iter<'a>(&'a self) -> Box<dyn Iterator<Item = &'a Self::Item> + 'a> {
+        Box::new(self.inner.iter())
     }
 }
 

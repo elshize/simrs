@@ -4,12 +4,7 @@ use std::fmt;
 use crate::{generate_next_id, ComponentId, EventEntry, Scheduler, State};
 
 pub trait ProcessEventEntry {
-    fn process_event_entry<'a>(
-        &self,
-        entry: EventEntry,
-        scheduler: &mut Scheduler,
-        state: &mut State<'a>,
-    );
+    fn process_event_entry(&self, entry: EventEntry, scheduler: &mut Scheduler, state: &mut State);
 }
 
 /// Interface of a simulation component.
@@ -29,7 +24,7 @@ pub trait Component: ProcessEventEntry {
         self_id: ComponentId<Self::Event>,
         event: &Self::Event,
         scheduler: &mut Scheduler,
-        state: &mut State<'a>,
+        state: &mut State,
     );
 }
 
@@ -42,7 +37,7 @@ where
         &self,
         entry: EventEntry,
         scheduler: &mut Scheduler,
-        state: &mut State<'a>,
+        state: &mut State,
     ) {
         let entry = entry
             .downcast::<E>()

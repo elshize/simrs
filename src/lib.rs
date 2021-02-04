@@ -325,16 +325,16 @@ fn generate_next_id() -> usize {
 /// Simulation struct that puts different parts of the simulation together.
 ///
 /// See the [crate-level documentation](index.html) for more information.
-pub struct Simulation<'a> {
+pub struct Simulation {
     /// Simulation state.
-    pub state: State<'a>,
+    pub state: State,
     /// Event scheduler.
     pub scheduler: Scheduler,
     /// Component container.
     pub components: Components,
 }
 
-impl<'a> Simulation<'a> {
+impl Simulation {
     /// Performs one step of the simulation. Returns `true` if there was in fact an event
     /// available to process, and `false` instead, which signifies that the simulation
     /// ended.
@@ -365,7 +365,7 @@ impl<'a> Simulation<'a> {
 
     /// Adds a new unbounded queue.
     #[must_use]
-    pub fn add_queue<Q: Queue<'a> + 'static>(&mut self, queue: Q) -> QueueId<Q> {
+    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         self.state.add_queue(queue)
     }
 
@@ -380,7 +380,7 @@ impl<'a> Simulation<'a> {
     }
 }
 
-impl Default for Simulation<'_> {
+impl Default for Simulation {
     fn default() -> Self {
         let state = State::default();
         let components = Components::default();
