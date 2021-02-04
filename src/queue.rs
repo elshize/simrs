@@ -14,9 +14,12 @@ impl std::fmt::Display for PushError {
 impl std::error::Error for PushError {}
 
 /// Trait implemented by the queues used in the simulation.
-pub trait Queue {
+pub trait Queue<'q> {
     /// Type of elements held by the queue.
-    type Item;
+    type Item: 'q;
+
+    /// Type of elements held by the queue.
+    type Iterator: Iterator<Item = &'q Self::Item> + 'q;
 
     /// Add an element to the queue.
     ///
@@ -30,6 +33,9 @@ pub trait Queue {
 
     /// Returns the number of elements in the queue.
     fn len(&self) -> usize;
+
+    /// Iterates over queue elements. The iterator items are of type `&T`.
+    fn iter(&'q self) -> Self::Iterator;
 
     /// Returns `true` if there are no elements in the queue.
     fn is_empty(&self) -> bool {
@@ -69,8 +75,9 @@ impl<T> Fifo<T> {
     }
 }
 
-impl<T> Queue for Fifo<T> {
+impl<'q, T: 'q> Queue<'q> for Fifo<T> {
     type Item = T;
+    type Iterator = std::collections::vec_deque::Iter<'q, T>;
 
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
@@ -87,6 +94,10 @@ impl<T> Queue for Fifo<T> {
 
     fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    fn iter(&'q self) -> Self::Iterator {
+        self.inner.iter()
     }
 }
 
@@ -116,8 +127,9 @@ impl<T: Ord> PriorityQueue<T> {
     }
 }
 
-impl<T: Ord> Queue for PriorityQueue<T> {
+impl<'q, T: Ord + 'static> Queue<'q> for PriorityQueue<T> {
     type Item = T;
+    type Iterator = std::collections::binary_heap::Iter<'q, T>;
 
     fn push(&mut self, value: T) -> Result<(), PushError> {
         if self.inner.len() < self.capacity {
@@ -134,6 +146,10 @@ impl<T: Ord> Queue for PriorityQueue<T> {
 
     fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    fn iter(&'q self) -> Self::Iterator {
+        self.inner.iter()
     }
 }
 

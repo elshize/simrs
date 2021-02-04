@@ -1,26 +1,29 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 
 use super::{queue::PushError, Key, Queue, QueueId};
 
 /// State of a simulation holding all queues and arbitrary values in a store value.
-pub struct State {
+pub struct State<'a> {
     store: HashMap<usize, Box<dyn Any>>,
     queues: HashMap<usize, Box<dyn Any>>,
     next_id: usize,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl Default for State {
+impl Default for State<'_> {
     fn default() -> Self {
         Self {
             store: HashMap::new(),
             queues: HashMap::new(),
             next_id: 0,
+            phantom: PhantomData,
         }
     }
 }
 
-impl State {
+impl<'a> State<'a> {
     /// Inserts an arbitrary value to the value store. Learn more in the documentation for [`Key`].
     #[must_use = "Discarding key results in leaking inserted value"]
     pub fn insert<V: 'static>(&mut self, value: V) -> Key<V> {
@@ -55,7 +58,7 @@ impl State {
     }
 
     /// Creates a new unbounded queue, returning its ID.
-    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
+    pub fn add_queue<Q: Queue<'a> + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         let id = self.next_id;
         self.next_id += 1;
         self.queues.insert(id, Box::new(queue));
@@ -66,7 +69,7 @@ impl State {
     ///
     /// # Errors
     /// It returns an error if the queue is full.
-    pub fn send<Q: Queue + 'static>(
+    pub fn send<Q: Queue<'a> + 'static>(
         &mut self,
         queue: QueueId<Q>,
         value: Q::Item,
@@ -80,7 +83,7 @@ impl State {
     }
 
     /// Pops the first value from the `queue`. It returns `None` if  the queue is empty.
-    pub fn recv<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
+    pub fn recv<Q: Queue<'a> + 'static>(&mut self, queue: QueueId<Q>) -> Option<Q::Item> {
         self.queues
             .get_mut(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
@@ -90,13 +93,25 @@ impl State {
     }
 
     /// Checks the number of elements in the queue.
-    pub fn len<Q: Queue + 'static>(&mut self, queue: QueueId<Q>) -> usize {
+    #[must_use]
+    pub fn queue_len<Q: Queue<'a> + 'static>(&self, queue: QueueId<Q>) -> usize {
         self.queues
             .get(&queue.id)
             .expect("Queues cannot be removed so it must exist.")
             .downcast_ref::<Q>()
             .expect("Ensured by the key type.")
             .len()
+    }
+
+    /// Returns a slice of queue items.
+    #[must_use]
+    pub fn queue_items<Q: Queue<'a> + 'static>(&'a self, queue: QueueId<Q>) -> Q::Iterator {
+        self.queues
+            .get(&queue.id)
+            .expect("Queues cannot be removed so it must exist.")
+            .downcast_ref::<Q>()
+            .expect("Ensured by the key type.")
+            .iter()
     }
 }
 
@@ -137,7 +152,7 @@ mod test {
     fn test_bounded_queue() {
         let mut state = State::default();
         let qid = state.add_queue(Fifo::<&str>::bounded(2));
-        assert_eq!(state.len(qid), 0);
+        assert_eq!(state.queue_len(qid), 0);
 
         assert!(state.send(qid, "A").is_ok());
         assert!(state.send(qid, "B").is_ok());
@@ -152,7 +167,7 @@ mod test {
     fn test_unbounded_queue() {
         let mut state = State::default();
         let qid = state.add_queue(Fifo::default());
-        assert_eq!(state.len(qid), 0);
+        assert_eq!(state.queue_len(qid), 0);
 
         assert!(state.send(qid, "A").is_ok());
         assert!(state.send(qid, "B").is_ok());
@@ -168,7 +183,7 @@ mod test {
     fn test_bounded_queue_priority() {
         let mut state = State::default();
         let qid = state.add_queue(PriorityQueue::bounded(2));
-        assert_eq!(state.len(qid), 0);
+        assert_eq!(state.queue_len(qid), 0);
 
         assert!(state.send(qid, 2).is_ok());
         assert!(state.send(qid, 1).is_ok());
@@ -183,7 +198,7 @@ mod test {
     fn test_unbounded_queue_priority() {
         let mut state = State::default();
         let qid = state.add_queue(PriorityQueue::default());
-        assert_eq!(state.len(qid), 0);
+        assert_eq!(state.queue_len(qid), 0);
 
         assert!(state.send(qid, 2).is_ok());
         assert!(state.send(qid, 1).is_ok());

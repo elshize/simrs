@@ -87,7 +87,7 @@ impl Component for Consumer {
             ConsumerEvent::Finished => {
                 let product = state.get_mut(self.working_on).unwrap().take().unwrap();
                 self.log(product);
-                if state.len(self.incoming) > 0 {
+                if state.queue_len(self.incoming) > 0 {
                     scheduler.schedule(Duration::default(), self_id, ConsumerEvent::Received);
                 }
             }

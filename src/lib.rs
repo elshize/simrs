@@ -60,7 +60,7 @@
 //! let mut state = State::default();
 //! let queue_id = state.add_queue(Fifo::default());
 //! state.send(queue_id, 1);
-//! assert_eq!(state.len(queue_id), 1);
+//! assert_eq!(state.queue_len(queue_id), 1);
 //! assert_eq!(state.recv(queue_id), Some(1));
 //! assert_eq!(state.recv(queue_id), None);
 //! ```
@@ -74,9 +74,9 @@
 //! let queue_capacity = 1;
 //! let queue_id = state.add_queue(Fifo::bounded(queue_capacity));
 //! assert!(state.send(queue_id, 1).is_ok());
-//! assert_eq!(state.len(queue_id), 1);
+//! assert_eq!(state.queue_len(queue_id), 1);
 //! assert!(!state.send(queue_id, 2).is_ok());
-//! assert_eq!(state.len(queue_id), 1);
+//! assert_eq!(state.queue_len(queue_id), 1);
 //! ```
 //!
 //! # Components
@@ -267,7 +267,7 @@
 //!             ConsumerEvent::Finished => {
 //!                 let product = state.get_mut(self.working_on).unwrap().take().unwrap();
 //!                 self.log(product);
-//!                 if state.len(self.incoming) > 0 {
+//!                 if state.queue_len(self.incoming) > 0 {
 //!                     scheduler.schedule(Duration::default(), self_id, ConsumerEvent::Received);
 //!                 }
 //!             }
@@ -325,16 +325,16 @@ fn generate_next_id() -> usize {
 /// Simulation struct that puts different parts of the simulation together.
 ///
 /// See the [crate-level documentation](index.html) for more information.
-pub struct Simulation {
+pub struct Simulation<'a> {
     /// Simulation state.
-    pub state: State,
+    pub state: State<'a>,
     /// Event scheduler.
     pub scheduler: Scheduler,
     /// Component container.
     pub components: Components,
 }
 
-impl Simulation {
+impl<'a> Simulation<'a> {
     /// Performs one step of the simulation. Returns `true` if there was in fact an event
     /// available to process, and `false` instead, which signifies that the simulation
     /// ended.
@@ -365,7 +365,7 @@ impl Simulation {
 
     /// Adds a new unbounded queue.
     #[must_use]
-    pub fn add_queue<Q: Queue + 'static>(&mut self, queue: Q) -> QueueId<Q> {
+    pub fn add_queue<Q: Queue<'a> + 'static>(&mut self, queue: Q) -> QueueId<Q> {
         self.state.add_queue(queue)
     }
 
@@ -380,7 +380,7 @@ impl Simulation {
     }
 }
 
-impl Default for Simulation {
+impl Default for Simulation<'_> {
     fn default() -> Self {
         let state = State::default();
         let components = Components::default();
