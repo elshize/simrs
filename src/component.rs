@@ -4,7 +4,12 @@ use std::fmt;
 use crate::{generate_next_id, ComponentId, EventEntry, Scheduler, State};
 
 pub trait ProcessEventEntry {
-    fn process_event_entry(&self, entry: EventEntry, scheduler: &mut Scheduler, state: &mut State);
+    fn process_event_entry<'a>(
+        &self,
+        entry: EventEntry,
+        scheduler: &mut Scheduler,
+        state: &mut State<'a>,
+    );
 }
 
 /// Interface of a simulation component.
@@ -19,12 +24,12 @@ pub trait Component: ProcessEventEntry {
     /// - `event`: The occurring event.
     /// - `scheduler`: The scheduler used to access time and schedule new events.
     /// - `state`: The state is used to access queues and values in the value store.
-    fn process_event(
+    fn process_event<'a>(
         &self,
         self_id: ComponentId<Self::Event>,
         event: &Self::Event,
         scheduler: &mut Scheduler,
-        state: &mut State,
+        state: &mut State<'a>,
     );
 }
 
@@ -33,7 +38,12 @@ where
     E: fmt::Debug + 'static,
     C: Component<Event = E>,
 {
-    fn process_event_entry(&self, entry: EventEntry, scheduler: &mut Scheduler, state: &mut State) {
+    fn process_event_entry<'a>(
+        &self,
+        entry: EventEntry,
+        scheduler: &mut Scheduler,
+        state: &mut State<'a>,
+    ) {
         let entry = entry
             .downcast::<E>()
             .expect("Failed to downcast event entry.");
