@@ -78,10 +78,10 @@ jobs:
             - run: sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
             - run: sudo apt-get install -y llvm-11
             - run: cargo install rustfilt
-            - run: echo "PATH=.:/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
+            - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
             - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
             - run: cargo test --verbose --workspace
-            - run: grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "*cargo*" --ignore "*example*" -o ./coverage/lcov.info
+            - run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "*cargo*" --ignore "*example*" -o ./coverage/lcov.info
             - name: Coveralls
               uses: coverallsapp/github-action@master
               with:
