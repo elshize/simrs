@@ -68,6 +68,7 @@ jobs:
             RUSTFLAGS: -Zinstrument-coverage
             LLVM_PROFDATA: llvm-profdata-11
             LLVM_COV: llvm-cov-11
+            LLVM_PROFILE_FILE: coverage-%p-%m.profraw
         steps:
             - uses: actions/checkout@v2
             - uses: hecrj/setup-rust-action@v1
