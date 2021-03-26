@@ -66,16 +66,19 @@ jobs:
         runs-on: ubuntu-latest
         env:
             RUSTFLAGS: -Zinstrument-coverage
-            LLVM_PROFDATA: llvm-profdata-11
-            LLVM_COV: llvm-cov-11
+            LLVM_PROFILE_FILE: coverage-%p-%m.profraw
         steps:
             - uses: actions/checkout@v2
             - uses: hecrj/setup-rust-action@v1
               with:
                   rust-version: nightly
-            - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-            - run: sudo add-apt-repository 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-11 main'
-            - run: sudo apt-get install -y llvm-11
-            - run: cargo install rustfilt
+            - run: rustup component add llvm-tools-preview
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
-            - run: ./codecov.sh --check
+            - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+            - run: cargo test --verbose --workspace
+            - run: mkdir ./coverage
+            - run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "*cargo*" --ignore "*example*" -o ./coverage/lcov.info
+            - name: Coveralls
+              uses: coverallsapp/github-action@master
+              with:
+                github-token: ${{ secrets.GITHUB_TOKEN }}

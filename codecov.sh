@@ -6,36 +6,16 @@ REQUIRED=100
 
 LLVM_COV=${LLVM_COV:-llvm-cov}
 LLVM_PROFDATA=${LLVM_PROFDATA:-llvm-profdata}
+export LLVM_PROFILE_FILE="coverage-%p-%m.profraw"
+export RUSTFLAGS="-Zinstrument-coverage"
+
+format="$1"
+[[ "$format" == "html" ]] && output="./coverage" || output="./coverage/lcov.info"
 
 cargo clean
-RUSTFLAGS="-Zinstrument-coverage" cargo test --lib --no-run
-tests="target/debug/deps/$(ls target/debug/deps | grep -e "^simrs-[a-z0-9]*$")"
-$tests
-cat default.profraw > all.profraw
-
-RUSTFLAGS="-Zinstrument-coverage" cargo build --examples
-objects=""
-examples="$(ls target/debug/examples | grep -e ".*-[a-z0-9]*$")"
-for example in $examples; do
-    ./target/debug/examples/$example 2>&1 > /dev/null
-    objects="$objects -object ./target/debug/examples/$example"
-    cat default.profraw >> all.profraw
-done
-
-$LLVM_PROFDATA merge -sparse all.profraw -o default.profdata
-if ! [[ $1 = "--check" ]]; then
-    $LLVM_COV report -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata
-    $LLVM_COV show -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
-        -show-line-counts-or-regions \
-        -format=html > cov.html
-else
-    $LLVM_COV export -Xdemangler=rustfilt $tests $objects -instr-profile=default.profdata \
-        > lcov.json
-    percent=$(jq '.data[].totals.lines.percent' lcov.json)
-    if (( percent < $REQUIRED )); then
-        echo "Required ${REQUIRED}% line coverage. Coverage detected: $percent"
-        exit 1
-    else
-        echo "Success!"
-    fi
-fi
+cargo test
+rm -rf "$output"
+grcov . --binary-path ./target/debug/ -s . -t "$format" --branch --ignore-not-existing \
+    --ignore "*cargo*" \
+    --ignore "*example*" \
+    -o "$output"
