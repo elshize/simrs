@@ -56,6 +56,7 @@ impl Default for Components {
 }
 
 impl Components {
+    #[allow(clippy::missing_panics_doc)]
     /// Process the event on the component given by the event entry.
     pub fn process_event_entry(
         &self,
