@@ -193,5 +193,5 @@ fn main() {
                 .push(format!("{:?}", sim.scheduler.time()));
         });
     }
-    assert_eq!(*messages.borrow(), EXPECTED.split("\n").collect::<Vec<_>>());
+    assert_eq!(*messages.borrow(), EXPECTED.split('\n').collect::<Vec<_>>());
 }
