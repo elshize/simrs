@@ -14,6 +14,7 @@ format="$1"
 
 cargo clean
 cargo test
+cargo run --example simulation
 rm -rf "$output"
 grcov . --binary-path ./target/debug/ -s . -t "$format" --branch --ignore-not-existing \
     --ignore "*cargo*" \
