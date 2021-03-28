@@ -172,6 +172,14 @@ mod test {
     use super::*;
 
     #[test]
+    fn test_clock_ref() {
+        let time = Duration::from_secs(1);
+        let clock = Clock::new(Cell::new(time));
+        let clock_ref = ClockRef::from(clock);
+        assert_eq!(clock_ref.time(), time);
+    }
+
+    #[test]
     fn test_event_entry_debug() {
         let entry = EventEntry {
             time: Reverse(Duration::from_secs(1)),

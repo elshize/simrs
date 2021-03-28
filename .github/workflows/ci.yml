@@ -23,6 +23,7 @@ jobs:
               with:
                   rust-version: ${{ matrix.rust }}
             - run: cargo test --verbose --workspace
+            - run: cargo run --example simulation
     cargo-check:
         name: Check for warnings
         runs-on: ubuntu-latest
@@ -76,6 +77,7 @@ jobs:
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
             - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
             - run: cargo test --verbose --workspace
+            - run: cargo run --example simulation
             - run: mkdir ./coverage
             - run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "*cargo*" --ignore "*example*" -o ./coverage/lcov.info
             - name: Coveralls
