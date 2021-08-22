@@ -350,7 +350,7 @@ impl Simulation {
     /// This function might not terminate if the end condition is not satisfied.
     pub fn run<F: Fn(&Simulation)>(&mut self, step_function: F) {
         while self.step() {
-            step_function(self)
+            step_function(self);
         }
     }
 
