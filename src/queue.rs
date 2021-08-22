@@ -43,7 +43,6 @@ pub trait Queue {
 ///
 /// [`VecDeque`]: https://doc.rust-lang.org/std/collections/struct.VecDeque.html
 /// [`usize::MAX`]: https://doc.rust-lang.org/std/primitive.usize.html#associatedconstant.MAX
-/// ```
 pub struct Fifo<T> {
     inner: VecDeque<T>,
     capacity: usize,
