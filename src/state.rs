@@ -20,6 +20,7 @@ impl Default for State {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl State {
     /// Inserts an arbitrary value to the value store. Learn more in the documentation for [`Key`].
     #[must_use = "Discarding key results in leaking inserted value"]
@@ -85,6 +86,12 @@ impl State {
     #[must_use]
     pub fn len<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> usize {
         self.queue(queue).len()
+    }
+
+    /// Checks if the given queue is empty.
+    #[must_use]
+    pub fn is_empty<Q: Queue + 'static>(&self, queue: QueueId<Q>) -> bool {
+        self.len(queue) == 0
     }
 
     /// Returns a immutable reference to the queue by the given ID.
