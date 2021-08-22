@@ -180,24 +180,6 @@ mod test {
     }
 
     #[test]
-    fn test_event_entry_debug() {
-        let entry = EventEntry {
-            time: Reverse(Duration::from_secs(1)),
-            component: 2,
-            inner: Box::new(String::from("inner")),
-        };
-        assert_eq!(
-            &format!("{:?}", entry),
-            "EventEntry { time: Reverse(1s), component: 2, inner: Any }"
-        );
-        let typed = entry.downcast::<String>().unwrap();
-        assert_eq!(
-            &format!("{:?}", typed),
-            "EventEntryTyped { time: 1s, component_id: ComponentId { id: 2, _marker: PhantomData }, component_idx: 2, event: \"inner\" }"
-        );
-    }
-
-    #[test]
     fn test_event_entry_downcast() {
         let entry = EventEntry {
             time: Reverse(Duration::from_secs(1)),

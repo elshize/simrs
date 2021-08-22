@@ -20,6 +20,7 @@ impl Default for State {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl State {
     /// Inserts an arbitrary value to the value store. Learn more in the documentation for [`Key`].
     #[must_use = "Discarding key results in leaking inserted value"]
