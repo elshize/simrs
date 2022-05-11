@@ -81,10 +81,10 @@ impl Component for Consumer {
         scheduler: &mut Scheduler,
         state: &mut State,
     ) {
-        let busy = state.get(self.working_on).is_some();
+        let busy = state.get(self.working_on).unwrap().is_some();
         match event {
             ConsumerEvent::Received => {
-                if busy {
+                if !busy {
                     if let Some(product) = state.recv(self.incoming) {
                         if let Some(w) = state.get_mut(self.working_on) {
                             *w = Some(product);
