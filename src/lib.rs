@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/simrs/0.1.2")]
+#![doc(html_root_url = "https://docs.rs/simrs/0.2.0")]
 #![warn(
     missing_docs,
     trivial_casts,
@@ -180,7 +180,7 @@
 //! # Example
 //!
 //! ```
-//! # use simrs::{Simulation, State, Scheduler, Components, ComponentId, Component, QueueId, Key, Fifo};
+//! # use simrs::{Simulation, State, Scheduler, Components, ComponentId, Component, QueueId, Key, Fifo, Executor};
 //! # use std::time::Duration;
 //!
 //! #[derive(Debug)]
@@ -292,9 +292,9 @@
 //!     simulation.schedule(Duration::new(0, 0), producer, ProducerEvent);
 //!     // simulation.schedule(Duration::new(0, 0), consumer, ProducerEvent);
 //!     // The above would fail with:                         ^^^^^^^^^^^^^ expected enum `ConsumerEvent`, found struct `ProducerEvent`
-//!     simulation.run(|sim| {
+//!     simulation.execute(Executor::unbound().side_effect(|sim| {
 //!         println!("{:?}", sim.scheduler.time());
-//!     });
+//!     }));
 //! }
 //! ```
 
@@ -312,9 +312,12 @@ pub use state::State;
 pub use queue::{Fifo, PriorityQueue, PushError, Queue};
 
 mod component;
+mod execute;
 mod queue;
 mod scheduler;
 mod state;
+
+pub use execute::{Execute, Executor};
 
 static ID_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
@@ -325,6 +328,7 @@ fn generate_next_id() -> usize {
 /// Simulation struct that puts different parts of the simulation together.
 ///
 /// See the [crate-level documentation](index.html) for more information.
+#[derive(Default)]
 pub struct Simulation {
     /// Simulation state.
     pub state: State,
@@ -336,7 +340,7 @@ pub struct Simulation {
 
 impl Simulation {
     /// Performs one step of the simulation. Returns `true` if there was in fact an event
-    /// available to process, and `false` instead, which signifies that the simulation
+    /// available to process, and `false` otherwise, which signifies that the simulation
     /// ended.
     pub fn step(&mut self) -> bool {
         self.scheduler.pop().map_or(false, |event| {
@@ -348,10 +352,23 @@ impl Simulation {
 
     /// Runs the entire simulation from start to end.
     /// This function might not terminate if the end condition is not satisfied.
+    #[deprecated(
+        since = "0.2.0",
+        note = "Handling this in Simulation is susceptible to API breaks and/or making it messy. \
+                Use execute instead, which delegates the logic to an external executor."
+    )]
     pub fn run<F: Fn(&Simulation)>(&mut self, step_function: F) {
         while self.step() {
             step_function(self);
         }
+    }
+
+    /// Runs the entire simulation.
+    ///
+    /// The stopping condition and other execution details depend on the executor used.
+    /// See [`Execute`] and [`Executor`] for more details.
+    pub fn execute<E: Execute>(&mut self, executor: E) {
+        executor.execute(self);
     }
 
     /// Adds a new component.
@@ -377,18 +394,6 @@ impl Simulation {
         event: E,
     ) {
         self.scheduler.schedule(time, component, event);
-    }
-}
-
-impl Default for Simulation {
-    fn default() -> Self {
-        let state = State::default();
-        let components = Components::default();
-        Self {
-            state,
-            components,
-            scheduler: Scheduler::default(),
-        }
     }
 }
 
