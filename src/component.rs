@@ -42,17 +42,9 @@ where
 }
 
 /// Container holding type-erased components.
+#[derive(Default)]
 pub struct Components {
     components: HashMap<usize, Box<dyn ::std::any::Any>>,
-}
-
-impl Default for Components {
-    #[must_use]
-    fn default() -> Self {
-        Self {
-            components: HashMap::new(),
-        }
-    }
 }
 
 impl Components {

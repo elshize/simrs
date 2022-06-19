@@ -4,20 +4,11 @@ use std::collections::HashMap;
 use super::{queue::PushError, Key, Queue, QueueId};
 
 /// State of a simulation holding all queues and arbitrary values in a store value.
+#[derive(Default)]
 pub struct State {
     store: HashMap<usize, Box<dyn Any>>,
     queues: HashMap<usize, Box<dyn Any>>,
     next_id: usize,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            store: HashMap::new(),
-            queues: HashMap::new(),
-            next_id: 0,
-        }
-    }
 }
 
 #[allow(clippy::len_without_is_empty)]
