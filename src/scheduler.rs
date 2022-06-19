@@ -50,6 +50,11 @@ impl EventEntry {
     pub(crate) fn component_idx(&self) -> usize {
         self.component
     }
+
+    #[must_use]
+    pub(crate) fn time(&self) -> Duration {
+        self.time.0
+    }
 }
 
 impl PartialEq for EventEntry {
@@ -156,6 +161,11 @@ impl Scheduler {
         ClockRef {
             clock: Rc::clone(&self.clock),
         }
+    }
+
+    /// Returns a reference to the next scheduled event or `None` if none are left.
+    pub fn peek(&mut self) -> Option<&EventEntry> {
+        self.events.peek()
     }
 
     /// Removes and returns the next scheduled event or `None` if none are left.

@@ -1,4 +1,4 @@
-use simrs::{Component, ComponentId, Fifo, Key, QueueId, Scheduler, Simulation, State};
+use simrs::{Component, ComponentId, Executor, Fifo, Key, QueueId, Scheduler, Simulation, State};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -187,11 +187,11 @@ fn main() {
     // The above would fail with:                         ^^^^^^^^^^^^^ expected enum `ConsumerEvent`, found struct `ProducerEvent`
     {
         let messages = messages.clone();
-        simulation.run(move |sim| {
+        simulation.execute(Executor::unbound().side_effect(move |sim| {
             messages
                 .borrow_mut()
                 .push(format!("{:?}", sim.scheduler.time()));
-        });
+        }));
     }
     assert_eq!(*messages.borrow(), EXPECTED.split('\n').collect::<Vec<_>>());
 }

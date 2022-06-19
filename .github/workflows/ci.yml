@@ -75,7 +75,7 @@ jobs:
                   rust-version: nightly
             - run: rustup component add llvm-tools-preview
             - run: echo "PATH=/home/runner/.cargo/bin:$PATH" >> $GITHUB_ENV
-            - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
+            - run: curl -L https://github.com/mozilla/grcov/releases/download/v0.8.10/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar jxf -
             - run: cargo test --verbose --workspace
             - run: cargo run --example simulation
             - run: mkdir ./coverage
